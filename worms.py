@@ -18,7 +18,7 @@ class Worms:
         worm_start = self.__worm_cutoffs[worm_idx]
         worm_end = worm_start + worm_length
 
-        new = np.random.multivariate_normal(np.zeros(self.data.shape[1]), self.__var, 1)
+        new = self.__var * np.random.standard_normal((1, self.data.shape[1]))
 
         if direction == 0:
             self.clusters = np.vstack((self.clusters[:worm_start], self.clusters[worm_start] + new, self.clusters[worm_start:]))
@@ -61,7 +61,7 @@ class Worms:
     def learn(self, iterations, epochs, lam, mu, lr, alpha1=.8, alpha2=.2):
         self.lam = lam
         self.mu = mu
-        self.__var = 1e-4 * np.eye(self.data.shape[1])
+        self.__var = 1e-4
         self.__worm_cutoffs = np.arange(self.out_dim)
         self.__worm_lengths = np.ones(self.out_dim, dtype=np.int32)
 
@@ -101,9 +101,9 @@ class Worms:
                 self.clusters[winner_worm_start : winner_worm_end - 2] -= segments[1:]
                 self.clusters[winner_worm_start + 2 : winner_worm_end] += segments[:-1]
 
-
-            [self.__growth_death(k, 0, alpha1, alpha2) for k in range(self.out_dim)]
-            [self.__growth_death(k, 1, alpha1, alpha2) for k in range(self.out_dim)]
+            for k in range(self.out_dim):
+                self.__growth_death(k, 0, alpha1, alpha2)
+                self.__growth_death(k, 1, alpha1, alpha2)
 
         self.clusters = [self.clusters[self.__worm_cutoffs[k] : self.__worm_cutoffs[k] + self.__worm_lengths[k]] for k in range(self.out_dim)]
 
