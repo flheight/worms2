@@ -30,10 +30,10 @@ class Worms:
 
         new_cost = self.loss(snapshot)
 
-        if new_cost / init_cost < alpha2 * .5:
+        if new_cost / init_cost < alpha2:
             self.clusters = snapshot
 
-    def learn(self, iterations, epochs, lam, mu, lr, alpha1=.75, alpha2=.5):
+    def learn(self, iterations, epochs, lam, mu, lr, alpha1=.75, alpha2=.25):
         self.lam = lam
         self.mu = mu
         self.__var = 1e-4 * np.eye(self.data.shape[1])
