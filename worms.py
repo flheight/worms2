@@ -1,5 +1,6 @@
 import numpy as np
 from sklearn.cluster import KMeans
+from bisect import bisect
 
 class Worms:
     def __init__(self, k):
@@ -9,75 +10,120 @@ class Worms:
         self.data = data
 
     def __growth_death(self, worm_idx, direction, alpha1, alpha2):
-        init_cost = self.loss(self.clusters)
+        init_cost = self.loss()
 
         snapshot = self.clusters.copy()
 
+        worm_length = self.__worm_lengths[worm_idx]
+        worm_start = self.__worm_cutoffs[worm_idx]
+        worm_end = worm_start + worm_length
+
         new = np.random.multivariate_normal(np.zeros(self.data.shape[1]), self.__var, 1)
-        snapshot[worm_idx] = np.vstack((self.clusters[worm_idx][0] + new, snapshot[worm_idx])) if direction == 0 else np.vstack((snapshot[worm_idx], self.clusters[worm_idx][-1] + new))
 
-        new_cost = self.loss(snapshot)
+        if direction == 0:
+            self.clusters = np.vstack((self.clusters[:worm_start], self.clusters[worm_start] + new, self.clusters[worm_start:]))
 
-        if new_cost / init_cost < alpha1:
+        elif direction == 1:
+            self.clusters = np.vstack((self.clusters[:worm_end], self.clusters[worm_end - 1] + new, self.clusters[worm_end:]))
+
+        self.__worm_lengths[worm_idx] += 1
+        self.__worm_cutoffs[worm_idx + 1:] += 1
+
+        new_cost = self.loss()
+
+        if new_cost / init_cost > alpha1:
             self.clusters = snapshot
+            self.__worm_lengths[worm_idx] -= 1
+            self.__worm_cutoffs[worm_idx + 1:] -= 1
 
-        if self.clusters[worm_idx].shape[0] < 2:
+        if worm_length < 2:
             return
 
         snapshot = self.clusters.copy()
+        init_cost = new_cost
 
-        snapshot[worm_idx] = snapshot[worm_idx][1:] if direction == 0 else snapshot[worm_idx][:-1]
+        if direction == 0:
+            self.clusters = np.vstack((self.clusters[:worm_start], self.clusters[worm_start + 1:]))
 
-        new_cost = self.loss(snapshot)
+        elif direction == 1:
+            self.clusters = np.vstack((self.clusters[:worm_end - 1], self.clusters[worm_end:]))
 
-        if new_cost / init_cost < alpha2:
+        self.__worm_lengths[worm_idx] -= 1
+        self.__worm_cutoffs[worm_idx + 1:] -= 1
+
+        new_cost = self.loss()
+
+        if new_cost / init_cost > alpha2:
             self.clusters = snapshot
+            self.__worm_lengths[worm_idx] += 1
+            self.__worm_cutoffs[worm_idx + 1:] += 1
 
-    def learn(self, iterations, epochs, lam, mu, lr, alpha1=.75, alpha2=.25):
+    def learn(self, iterations, epochs, lam, mu, lr, alpha1=.8, alpha2=.2):
         self.lam = lam
         self.mu = mu
         self.__var = 1e-4 * np.eye(self.data.shape[1])
+        self.__worm_cutoffs = np.arange(self.out_dim)
+        self.__worm_lengths = np.ones(self.out_dim, dtype=np.int32)
 
         kmeans = KMeans(self.out_dim).fit(self.data)
-        self.clusters = [center.reshape(1, -1) for center in kmeans.cluster_centers_]
+
+        self.clusters = kmeans.cluster_centers_
 
         for _ in range(iterations):
             for _ in range(epochs):
                 x = self.data[np.random.randint(self.data.shape[0])]
 
-                diff = [x - worm for worm in self.clusters]
-                dist = [np.einsum('ij,ij->i', df, df) for df in diff]
+                diff = x - self.clusters
+                dist = np.einsum('ij,ij->i', diff, diff)
 
-                winner_worm_idx = np.argmin([np.min(dist) for dist in dist])
-                winner_idx = np.argmin(dist[winner_worm_idx])
+                winner_idx = np.argmin(dist)
 
-                segments = self.clusters[winner_worm_idx][1:] - self.clusters[winner_worm_idx][:-1]
+                winner_worm_idx = bisect(self.__worm_cutoffs, winner_idx) - 1
+                winner_worm_length = self.__worm_lengths[winner_worm_idx]
+                winner_worm_start = self.__worm_cutoffs[winner_worm_idx]
+                winner_worm_end = winner_worm_start + winner_worm_length
+
+                segments = self.clusters[winner_worm_start + 1 : winner_worm_end] - self.clusters[winner_worm_start : winner_worm_end - 1]
+
+                self.clusters[winner_idx] += lr * diff[winner_idx]
+
+                if winner_worm_length < 2:
+                    continue
 
                 segments *= (self.lam + self.mu / 2) * lr
-                self.clusters[winner_worm_idx][:-1] += segments
-                self.clusters[winner_worm_idx][1:] -= segments
+                self.clusters[winner_worm_start : winner_worm_end - 1] += segments
+                self.clusters[winner_worm_start + 1 : winner_worm_end] -= segments
+
+                if winner_worm_length < 3:
+                    continue
 
                 segments /= (1 + 2 * self.lam / self.mu)
-                self.clusters[winner_worm_idx][:-2] -= segments[1:]
-                self.clusters[winner_worm_idx][2:] += segments[:-1]
+                self.clusters[winner_worm_start : winner_worm_end - 2] -= segments[1:]
+                self.clusters[winner_worm_start + 2 : winner_worm_end] += segments[:-1]
 
-                self.clusters[winner_worm_idx][winner_idx] += lr * diff[winner_worm_idx][winner_idx]
 
             [self.__growth_death(k, 0, alpha1, alpha2) for k in range(self.out_dim)]
             [self.__growth_death(k, 1, alpha1, alpha2) for k in range(self.out_dim)]
 
-    def loss(self, clusters):
+        self.clusters = [self.clusters[self.__worm_cutoffs[k] : self.__worm_cutoffs[k] + self.__worm_lengths[k]] for k in range(self.out_dim)]
+
+    def loss(self):
         x = self.data[np.random.randint(self.data.shape[0])]
 
-        diff = [x - worm for worm in self.clusters]
-        dist = [np.einsum('ij,ij->i', df, df) for df in diff]
+        diff = x - self.clusters
+        dist = np.einsum('ij,ij->i', diff, diff)
 
-        winner_worm_idx = np.argmin([np.min(dist) for dist in dist])
-        winner_idx = np.argmin(dist[winner_worm_idx])
+        winner_idx = np.argmin(dist)
 
-        mse = dist[winner_worm_idx][winner_idx]
+        winner_worm_idx = bisect(self.__worm_cutoffs, winner_idx) - 1
 
-        segments = clusters[winner_worm_idx][1:] - clusters[winner_worm_idx][:-1]
+        winner_worm_length = self.__worm_lengths[winner_worm_idx]
+        winner_worm_start = self.__worm_cutoffs[winner_worm_idx]
+        winner_worm_end = winner_worm_start + winner_worm_length
+
+        mse = dist[winner_idx]
+
+        segments = self.clusters[winner_worm_start + 1 : winner_worm_end] - self.clusters[winner_worm_start : winner_worm_end - 1]
 
         closeness_error = self.lam * np.sum(np.einsum('ij,ij->i', segments, segments))
 
