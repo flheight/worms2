@@ -10,3 +10,17 @@ done
 qt.qpa.wayland: Wayland does not support QWindow::requestActivate()
 Elapsed time: 5.440090894699097
 Accuracy : 0.8708333333333333
+
+MNIST UMAP 2
+
+➜  worms2-main python test.py
+done
+qt.qpa.wayland: Wayland does not support QWindow::requestActivate()
+Elapsed time: 2.5354244709014893
+Accuracy : 0.862
+➜  worms2-main python test.py
+done
+qt.qpa.wayland: Wayland does not support QWindow::requestActivate()
+Elapsed time: 0.011356830596923828
+Accuracy : 0.823
+➜  worms2-main 
