@@ -8,7 +8,7 @@ class Worms:
     def load_data(self, data):
         self.data = data
 
-    def __growth_death(self, worm_idx, direction, alpha1=.95, alpha2=.5):
+    def __growth_death(self, worm_idx, direction, alpha1=.75, alpha2=.5):
         init_cost = self.loss(self.clusters)
 
         snapshot = self.clusters.copy()
