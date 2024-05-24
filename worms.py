@@ -8,7 +8,7 @@ class Worms:
     def load_data(self, data):
         self.data = data
 
-    def __growth_death(self, worm_idx, direction, alpha1=.75, alpha2=.5):
+    def __growth_death(self, worm_idx, direction, alpha1, alpha2):
         init_cost = self.loss(self.clusters)
 
         snapshot = self.clusters.copy()
@@ -33,7 +33,7 @@ class Worms:
         if new_cost / init_cost < alpha2 * .5:
             self.clusters = snapshot
 
-    def learn(self, iterations, epochs, lam, mu, lr):
+    def learn(self, iterations, epochs, lam, mu, lr, alpha1=.75, alpha2=.5):
         self.lam = lam
         self.mu = mu
         self.__var = 1e-4 * np.eye(self.data.shape[1])
@@ -63,8 +63,8 @@ class Worms:
 
                 self.clusters[winner_worm_idx][winner_idx] += lr * diff[winner_worm_idx][winner_idx]
 
-            [self.__growth_death(k, 0) for k in range(self.out_dim)]
-            [self.__growth_death(k, 1) for k in range(self.out_dim)]
+            [self.__growth_death(k, 0, alpha1, alpha2) for k in range(self.out_dim)]
+            [self.__growth_death(k, 1, alpha1, alpha2) for k in range(self.out_dim)]
 
     def loss(self, clusters):
         x = self.data[np.random.randint(self.data.shape[0])]
