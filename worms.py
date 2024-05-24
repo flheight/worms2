@@ -18,7 +18,7 @@ class Worms:
         worm_start = self.__worm_cutoffs[worm_idx]
         worm_end = worm_start + worm_length
 
-        new = self.__var * np.random.standard_normal((1, self.data.shape[1]))
+        new = self.__var * np.random.uniform(low=-1, high=1, size=(1, self.data.shape[1]))
 
         if direction == 0:
             self.clusters = np.vstack((self.clusters[:worm_start], self.clusters[worm_start] + new, self.clusters[worm_start:]))
