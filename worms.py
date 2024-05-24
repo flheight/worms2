@@ -1,6 +1,5 @@
 import numpy as np
 from sklearn.cluster import KMeans
-import torch
 
 class Worms:
     def __init__(self, k):
@@ -85,3 +84,10 @@ class Worms:
         smoothness_error = -self.mu * np.sum(np.einsum('ij,ij->i', segments[1:], segments[:-1]))
 
         return mse + closeness_error + smoothness_error
+
+    def predict(self, x):
+        diffs = [x - worm[:, np.newaxis] for worm in self.clusters]
+        dists = [np.einsum('ijk,ijk->ij', df, df) for df in diffs]
+
+        min_dists = np.array([np.min(dt, axis=0) for dt in dists])
+        return np.argmin(min_dists, axis=0)
