@@ -70,6 +70,10 @@ class Worms:
         self.clusters = kmeans.cluster_centers_
 
         for _ in range(iterations):
+            for k in range(self.out_dim):
+                self.__growth_death(k, 0, alpha1, alpha2)
+                self.__growth_death(k, 1, alpha1, alpha2)
+                
             for _ in range(epochs):
                 x = self.data[np.random.randint(self.data.shape[0])]
 
@@ -100,10 +104,6 @@ class Worms:
                 segments /= (1 + 2 * self.lam / self.mu)
                 self.clusters[winner_worm_start : winner_worm_end - 2] -= segments[1:]
                 self.clusters[winner_worm_start + 2 : winner_worm_end] += segments[:-1]
-
-            for k in range(self.out_dim):
-                self.__growth_death(k, 0, alpha1, alpha2)
-                self.__growth_death(k, 1, alpha1, alpha2)
 
         self.clusters = [self.clusters[self.__worm_cutoffs[k] : self.__worm_cutoffs[k] + self.__worm_lengths[k]] for k in range(self.out_dim)]
 
