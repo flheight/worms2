@@ -13,7 +13,7 @@ net = Worms(k=2)
 net.data = X
 
 start = time.time()
-net.learn(iterations=100, epochs=100, lam=.5, mu=.4, lr=5e-2)
+net.learn(iterations=100, epochs=100, lam=.5, mu=.35, lr=5e-2)
 end = time.time()
 
 print(f"Elapsed time : {end - start}")
