@@ -14,7 +14,7 @@ net = Worms(k=3)
 net.load_data(X)
 
 start = time.time()
-net.learn(iterations=100, epochs=100, lam=2.6, mu=2.2, lr=1e-1)
+net.learn(iterations=100, epochs=100, lam=1.3, mu=1.1, lr=1e-1)
 end = time.time()
 
 print(f"Elapsed time : {end - start}")
@@ -44,7 +44,7 @@ plt.show()
 
 acc = 0
 for i in range(10):
-    net.learn(iterations=100, epochs=100, lam=2.6, mu=2.2, lr=1e-1)
+    net.learn(iterations=100, epochs=100, lam=1.3, mu=1.1, lr=1e-1)
     guess = net.predict(X)
 
     L = np.empty(3)
