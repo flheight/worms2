@@ -73,7 +73,7 @@ class Worms:
             for k in range(self.out_dim):
                 self.__growth_death(k, 0, alpha1, alpha2)
                 self.__growth_death(k, 1, alpha1, alpha2)
-                
+
             for _ in range(epochs):
                 x = self.data[np.random.randint(self.data.shape[0])]
 
@@ -94,7 +94,7 @@ class Worms:
                 if winner_worm_length < 2:
                     continue
 
-                segments *= (self.lam + self.mu / 2) * lr
+                segments *= (2 * self.lam + self.mu) * lr
                 self.clusters[winner_worm_start : winner_worm_end - 1] += segments
                 self.clusters[winner_worm_start + 1 : winner_worm_end] -= segments
 
