@@ -29,7 +29,7 @@ net.data = X
 
 # Train the network
 start = time.time()
-net.learn(iterations=100, epochs=200, lam=2.5, mu=2.2, lr=1e-1)
+net.learn(iterations=100, epochs=200, lam=1.725, mu=1.1, lr=1e-1)
 end = time.time()
 
 # Plot the results in 2D
