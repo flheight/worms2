@@ -58,7 +58,7 @@ class Worms:
             self.__worm_lengths[worm_idx] += 1
             self.__worm_cutoffs[worm_idx + 1:] += 1
 
-    def learn(self, iterations, epochs, lam, mu, lr, alpha1=.75, alpha2=.25):
+    def learn(self, iterations, epochs, lam, mu, lr, alpha1=.8, alpha2=.2):
         self.lam = lam
         self.mu = mu
         self.__var = 1e-4
