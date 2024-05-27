@@ -8,13 +8,8 @@ from datasets import load_dataset
 image_dataset = load_dataset('mnist')
 
 # Prepare the data
-X = np.array(image_dataset['test']['image']).reshape(-1, 28*28)
-y = np.array(image_dataset['test']['label'])
-
-# Randomly select 5000 samples
-ridx = np.random.randint(X.shape[0], size=5000)
-X = X[ridx]
-y = y[ridx]
+X = np.array(image_dataset['train']['image']).reshape(-1, 28*28)
+y = np.array(image_dataset['train']['label'])
 
 # Reduce dimensionality to 2 components using UMAP
 X = umap.UMAP(n_components=2).fit_transform(X)
@@ -29,12 +24,12 @@ net.data = X
 
 # Train the network
 start = time.time()
-net.learn(iterations=100, epochs=200, lam=1.725, mu=1.1, lr=1e-1)
+net.learn(iterations=100, epochs=400, lam=1.25, mu=1, lr=5e-2)
 end = time.time()
 
 # Plot the results in 2D
 for target in np.unique(y):
-    plt.scatter(X[(y == target), 0], X[(y == target), 1], label=f'Class {target}')
+    plt.scatter(X[(y == target), 0], X[(y == target), 1], label=f'Class {target}', s=.5)
     cluster = np.array(net.clusters[target])
     plt.plot(cluster[:, 0], cluster[:, 1], linewidth=5, color='black')
 
