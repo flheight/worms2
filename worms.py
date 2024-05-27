@@ -123,9 +123,15 @@ class Worms:
 
         mse = dist[winner_idx]
 
+        if winner_worm_length < 2:
+            return mse
+
         segments = self.clusters[winner_worm_start + 1 : winner_worm_end] - self.clusters[winner_worm_start : winner_worm_end - 1]
 
         closeness_error = self.lam * np.sum(np.einsum('ij,ij->i', segments, segments))
+
+        if winner_worm_length < 3:
+            return mse + closeness_error
 
         smoothness_error = -self.mu * np.sum(np.einsum('ij,ij->i', segments[1:], segments[:-1]))
 
