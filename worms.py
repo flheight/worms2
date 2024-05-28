@@ -12,8 +12,6 @@ class Worms:
     def __growth_death(self, worm_idx, direction, alpha1, alpha2):
         init_cost = self.loss()
 
-        snapshot = self.clusters.copy()
-
         worm_length = self.__worm_lengths[worm_idx]
         worm_start = self.__worm_cutoffs[worm_idx]
         worm_end = worm_start + worm_length
@@ -21,10 +19,9 @@ class Worms:
         new = self.__var * np.random.uniform(low=-1, high=1, size=(1, self.data.shape[1]))
 
         if direction == 0:
-            self.clusters = np.vstack((self.clusters[:worm_start], self.clusters[worm_start] + new, self.clusters[worm_start:]))
-
+            self.clusters = np.insert(self.clusters, worm_start, self.clusters[worm_start] + new, axis=0)
         elif direction == 1:
-            self.clusters = np.vstack((self.clusters[:worm_end], self.clusters[worm_end - 1] + new, self.clusters[worm_end:]))
+            self.clusters = np.insert(self.clusters, worm_end, self.clusters[worm_end - 1] + new, axis=0)
 
         self.__worm_lengths[worm_idx] += 1
         self.__worm_cutoffs[worm_idx + 1:] += 1
@@ -32,21 +29,21 @@ class Worms:
         new_cost = self.loss()
 
         if new_cost / init_cost > alpha1:
-            self.clusters = snapshot
+            self.clusters = np.delete(self.clusters, worm_start if direction == 0 else worm_end, axis=0)
             self.__worm_lengths[worm_idx] -= 1
             self.__worm_cutoffs[worm_idx + 1:] -= 1
 
         if worm_length < 2:
             return
 
-        snapshot = self.clusters.copy()
         init_cost = new_cost
 
         if direction == 0:
-            self.clusters = np.vstack((self.clusters[:worm_start], self.clusters[worm_start + 1:]))
-
+            deleted = self.clusters[worm_start]
+            self.clusters = np.delete(self.clusters, worm_start, axis=0)
         elif direction == 1:
-            self.clusters = np.vstack((self.clusters[:worm_end - 1], self.clusters[worm_end:]))
+            deleted = self.clusters[worm_end - 1]
+            self.clusters = np.delete(self.clusters, worm_end - 1, axis=0)
 
         self.__worm_lengths[worm_idx] -= 1
         self.__worm_cutoffs[worm_idx + 1:] -= 1
@@ -54,7 +51,7 @@ class Worms:
         new_cost = self.loss()
 
         if new_cost / init_cost > alpha2:
-            self.clusters = snapshot
+            self.clusters = np.insert(self.clusters, worm_start if direction == 0 else worm_end - 1, deleted, axis=0)
             self.__worm_lengths[worm_idx] += 1
             self.__worm_cutoffs[worm_idx + 1:] += 1
 
@@ -97,6 +94,8 @@ class Worms:
                 segments *= (2 * self.lam + self.mu) * lr
                 self.clusters[winner_worm_start : winner_worm_end - 1] += segments
                 self.clusters[winner_worm_start + 1 : winner_worm_end] -= segments
+
+                closeness_error = self.lam * np.sum(np.einsum('ij,ij->i', segments, segments))
 
                 if winner_worm_length < 3:
                     continue
