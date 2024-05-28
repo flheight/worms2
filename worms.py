@@ -29,7 +29,7 @@ class Worms:
         new_cost = self.loss()
 
         if new_cost / init_cost > alpha1:
-            self.clusters = np.delete(self.clusters, worm_start if direction == 0 else worm_end, axis=0)
+            self.clusters = np.delete(self.clusters, worm_start if direction == 0 else worm_end - 1, axis=0)
             self.__worm_lengths[worm_idx] -= 1
             self.__worm_cutoffs[worm_idx + 1:] -= 1
 
