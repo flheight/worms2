@@ -120,7 +120,7 @@ class Worms:
         winner_worm_start = self.__worm_cutoffs[winner_worm_idx]
         winner_worm_end = winner_worm_start + winner_worm_length
 
-        bic = (self.clusters.shape[0] + 1) * np.log(self.data.shape[0]) / self.data.shape[0]
+        bic = .5 * (self.clusters.shape[0] + 1) * np.log(self.data.shape[0]) / self.data.shape[0]
 
         mse = dist[winner_idx]
 
