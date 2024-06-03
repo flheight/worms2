@@ -95,8 +95,6 @@ class Worms:
                 self.clusters[winner_worm_start : winner_worm_end - 1] += segments
                 self.clusters[winner_worm_start + 1 : winner_worm_end] -= segments
 
-                closeness_error = self.lam * np.sum(np.einsum('ij,ij->i', segments, segments))
-
                 if winner_worm_length < 3:
                     continue
 
