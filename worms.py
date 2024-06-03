@@ -10,7 +10,7 @@ class Worms:
         self.data = data
 
     def __growth_death(self, worm_idx, direction, alpha1, alpha2):
-        init_cost = self.loss()
+        init_cost = self.__loss()
 
         worm_length = self.__worm_lengths[worm_idx]
         worm_start = self.__worm_cutoffs[worm_idx]
@@ -26,7 +26,7 @@ class Worms:
         self.__worm_lengths[worm_idx] += 1
         self.__worm_cutoffs[worm_idx + 1:] += 1
 
-        new_cost = self.loss()
+        new_cost = self.__loss()
 
         if new_cost / init_cost > alpha1:
             self.clusters = np.delete(self.clusters, worm_start if direction == 0 else worm_end - 1, axis=0)
@@ -48,7 +48,7 @@ class Worms:
         self.__worm_lengths[worm_idx] -= 1
         self.__worm_cutoffs[worm_idx + 1:] -= 1
 
-        new_cost = self.loss()
+        new_cost = self.__loss()
 
         if new_cost / init_cost > alpha2:
             self.clusters = np.insert(self.clusters, worm_start if direction == 0 else worm_end - 1, deleted, axis=0)
@@ -95,6 +95,8 @@ class Worms:
                 self.clusters[winner_worm_start : winner_worm_end - 1] += segments
                 self.clusters[winner_worm_start + 1 : winner_worm_end] -= segments
 
+                closeness_error = self.lam * np.sum(np.einsum('ij,ij->i', segments, segments))
+
                 if winner_worm_length < 3:
                     continue
 
@@ -104,7 +106,7 @@ class Worms:
 
         self.clusters = [self.clusters[self.__worm_cutoffs[k] : self.__worm_cutoffs[k] + self.__worm_lengths[k]] for k in range(self.out_dim)]
 
-    def loss(self):
+    def __loss(self):
         x = self.data[np.random.randint(self.data.shape[0])]
 
         diff = x - self.clusters
@@ -118,21 +120,23 @@ class Worms:
         winner_worm_start = self.__worm_cutoffs[winner_worm_idx]
         winner_worm_end = winner_worm_start + winner_worm_length
 
+        bic = (self.clusters.shape[0] + 1) * np.log(self.data.shape[0]) / self.data.shape[0]
+
         mse = dist[winner_idx]
 
         if winner_worm_length < 2:
-            return mse
+            return bic + mse
 
         segments = self.clusters[winner_worm_start + 1 : winner_worm_end] - self.clusters[winner_worm_start : winner_worm_end - 1]
 
         closeness_error = self.lam * np.sum(np.einsum('ij,ij->i', segments, segments))
 
         if winner_worm_length < 3:
-            return mse + closeness_error
+            return bic + mse + closeness_error
 
         smoothness_error = -self.mu * np.sum(np.einsum('ij,ij->i', segments[1:], segments[:-1]))
 
-        return mse + closeness_error + smoothness_error
+        return bic + mse + closeness_error + smoothness_error
 
     def predict(self, x):
         diffs = [x - worm[:, np.newaxis] for worm in self.clusters]
